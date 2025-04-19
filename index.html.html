@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <title>Davlat Xizmatlari</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #eef1f5; margin: 0; }
+    header, footer { background: #fff; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header { display: flex; justify-content: space-between; align-items: center; }
+    .buttons button { margin-left: 10px; padding: 8px 14px; border: none; border-radius: 4px; color: #fff; cursor: pointer; }
+    .login-btn { background: #007BFF; }
+    .register-btn { background: #28a745; }
+    .logout-btn { background: #dc3545; }
+    .form-box, .cabinet-box { background: #fff; padding: 20px; max-width: 500px; margin: 20px auto; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    input, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 4px; border: 1px solid #ccc; }
+    button.submit { width: 100%; padding: 10px; background: #007BFF; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .message { color: red; margin: 10px 0; }
+    footer { text-align: center; font-size: 14px; color: #777; border-top: 1px solid #ddd; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 8px; }
+    .admin-section { border-top: 1px solid #ccc; margin-top: 20px; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Davlat Xizmatlari</h1>
+    <div class="buttons" id="topButtons">
+      <button class="login-btn" onclick="showForm('login')">Kirish</button>
+      <button class="register-btn" onclick="showForm('register')">Ro'yxatdan o'tish</button>
+    </div>
+    <button class="logout-btn" id="logoutBtn" style="display:none" onclick="logout()">Chiqish</button>
+  </header>
+
+  <main>
+    <div id="loginForm" class="form-box">
+      <h2>Kirish</h2>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Parol">
+      <div class="message" id="loginMessage"></div>
+      <button class="submit" onclick="login()">Kirish</button>
+    </div>
+
+    <div id="registerForm" class="form-box" style="display:none">
+      <h2>Ro'yxatdan o'tish</h2>
+      <input type="text" id="regName" placeholder="Ism">
+      <input type="email" id="regEmail" placeholder="Email">
+      <input type="password" id="regPassword" placeholder="Parol">
+      <div class="message" id="registerMessage"></div>
+      <button class="submit" onclick="register()">Ro'yxatdan o'tish</button>
+    </div>
+
+    <div id="cabinet" class="cabinet-box" style="display:none">
+      <h2>Xush kelibsiz, <span id="userName">Foydalanuvchi</span>!</h2>
+      <p id="cabinetText"></p>
+
+      <div id="userServiceForm" class="admin-section">
+        <h3>Xizmatga ariza yuborish:</h3>
+        <select id="selectService"></select>
+        <input type="text" id="userRequest" placeholder="Izoh yoki sabab">
+        <button class="submit" onclick="sendRequest()">Yuborish</button>
+      </div>
+    </div>
+
+    <div id="adminPanel" class="cabinet-box" style="display:none">
+      <h2>Admin Panel</h2>
+
+      <div class="admin-section">
+        <h3>Foydalanuvchilar:</h3>
+        <ul id="userList"></ul>
+      </div>
+
+      <div class="admin-section">
+        <h3>Xizmat qo‘shish:</h3>
+        <input type="text" id="serviceName" placeholder="Xizmat nomi">
+        <input type="text" id="serviceDesc" placeholder="Tavsifi">
+        <button class="submit" onclick="addService()">Qo‘shish</button>
+      </div>
+
+      <div class="admin-section">
+        <h3>Xizmatlar:</h3>
+        <ul id="serviceList"></ul>
+      </div>
+
+      <div class="admin-section">
+        <h3>Yuborilgan arizalar:</h3>
+        <ul id="requestList"></ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>© 2025 Davlat Xizmatlari. Barcha huquqlar himoyalangan.</footer>
+
+  <script>
+    let currentUser = null;
+
+    function getUsers() {
+      return JSON.parse(localStorage.getItem('users') || '[]');
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    function showForm(form) {
+      document.getElementById('loginForm').style.display = form === 'login' ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = form === 'register' ? 'block' : 'none';
+      document.getElementById('cabinet').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('topButtons').style.display = 'flex';
+      document.getElementById('loginMessage').innerText = '';
+      document.getElementById('registerMessage').innerText = '';
+    }
+
+    function register() {
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      if (!name || !email || !password) {
+        document.getElementById('registerMessage').innerText = "Iltimos, barcha maydonlarni to'ldiring.";
+        return;
+      }
+      let users = getUsers();
+      if (users.find(u => u.email === email)) {
+        document.getElementById('registerMessage').innerText = "Bu email allaqachon ro'yxatdan o'tgan.";
+        return;
+      }
+      const isAdmin = email === "admin@uz" || name === "Prezident";
+      users.push({ name, email, password, isAdmin });
+      saveUsers(users);
+      document.getElementById('registerMessage').style.color = "green";
+      document.getElementById('registerMessage').innerText = "Muvaffaqiyatli ro'yxatdan o'tdingiz!";
+    }
+
+    function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const users = getUsers();
+      
+    let user = users.find(u => u.email === email && u.password === password);
+    if (!user && email === "admin@uz" && password === "1234") {
+        user = { name: "Prezident", email: "admin@uz", password: "1234", isAdmin: true };
+        users.push(user);
+        localStorage.setItem("users", JSON.stringify(users));
+    }
+    
+      if (!user) {
+        document.getElementById('loginMessage').innerText = "Noto'g'ri email yoki parol.";
+        return;
+      }
+      currentUser = user;
+      showCabinet();
+    }
+
+    function logout() {
+      currentUser = null;
+      showForm('login');
+    }
+
+    function showCabinet() {
+      const isAdmin = currentUser.isAdmin;
+      document.getElementById('userName').innerText = currentUser.name;
+      document.getElementById('cabinet').style.display = 'block';
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'inline-block';
+      document.getElementById('topButtons').style.display = 'none';
+
+      document.getElementById('cabinetText').innerText = isAdmin ?
+        "Siz admin sifatida tizimdasiz!" : "Bu sizning shaxsiy kabinetingiz.";
+
+      if (isAdmin) {
+        document.getElementById('adminPanel').style.display = 'block';
+        updateUserList();
+        updateServiceList();
+        updateRequestList();
+      } else {
+        document.getElementById('adminPanel').style.display = 'none';
+        updateServiceOptions();
+      }
+    }
+
+    function updateUserList() {
+      const users = getUsers();
+      const list = document.getElementById('userList');
+      list.innerHTML = '';
+      users.forEach((u, i) => {
+        const li = document.createElement('li');
+        li.textContent = u.name + ' (' + u.email + ')';
+        const del = document.createElement('button');
+        del.textContent = '❌';
+        del.onclick = () => {
+          users.splice(i, 1);
+          saveUsers(users);
+          updateUserList();
+        };
+        del.style.marginLeft = '10px';
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+
+    function addService() {
+      const name = document.getElementById('serviceName').value.trim();
+      const desc = document.getElementById('serviceDesc').value.trim();
+      if (!name || !desc) return;
+      const services = JSON.parse(localStorage.getItem('services') || '[]');
+      services.push({ name, desc });
+      localStorage.setItem('services', JSON.stringify(services));
+      updateServiceList();
+    }
+
+    function updateServiceList() {
+      const services = JSON.parse(localStorage.getItem('services') || '[]');
+      const list = document.getElementById('serviceList');
+      list.innerHTML = '';
+      services.forEach(s => {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>' + s.name + '</strong>: ' + s.desc;
+        list.appendChild(li);
+      });
+      updateServiceOptions();
+    }
+
+    function updateServiceOptions() {
+      const select = document.getElementById('selectService');
+      const services = JSON.parse(localStorage.getItem('services') || '[]');
+      select.innerHTML = '';
+      services.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.text = s.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function sendRequest() {
+      const service = document.getElementById('selectService').value;
+      const comment = document.getElementById('userRequest').value.trim();
+      const requests = JSON.parse(localStorage.getItem('requests') || '[]');
+      requests.push({ user: currentUser.name, service, comment });
+      localStorage.setItem('requests', JSON.stringify(requests));
+      document.getElementById('userRequest').value = '';
+      alert("Ariza yuborildi!");
+    }
+
+    function updateRequestList() {
+      const requests = JSON.parse(localStorage.getItem('requests') || '[]');
+      const list = document.getElementById('requestList');
+      list.innerHTML = '';
+      requests.forEach(r => {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>' + r.user + '</strong>: ' + r.service + ' – ' + r.comment;
+        list.appendChild(li);
+      });
+    }
+  </script>
+
+<button onclick="resetData()" style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: #dc2626; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer;">
+  🔄 Сбросить всё
+</button>
+<script>
+function resetData() {
+    if (confirm("Вы уверены, что хотите удалить все данные?")) {
+        localStorage.clear();
+        alert("Все данные удалены! Перезагружаем сайт...");
+        location.reload();
+    }
+}
+</script>
+</body>
+
+</html>
